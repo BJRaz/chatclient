@@ -1,0 +1,30 @@
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+		BODY {
+			background-color:white;
+		}
+	</style>
+	<script type="text/javascript">
+		var chatWin = null;
+		
+		function openChat() {
+			chatWin = window.open("chatwindow.html", "chatWindow", "width=755,height=593,status=no, resizable=yes, scrolling=yes");	
+		}
+		
+		function openChat2() {
+			chatWin = window.open("chatframe.html", "chatWindow", "width=750,height=500, status=no, resizable=yes, scrolling=yes");	
+		}
+		
+		function testChat() {
+			chatWin.testAll();
+		}
+	</script>	
+</head>
+<body>
+	<button onclick="openChat();">Open chat</button>
+	<button onclick="openChat2();">Open chat 2</button>
+	<button onclick="testChat();">Test</button>
+</body>
+</html>

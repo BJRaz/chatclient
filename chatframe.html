@@ -1,0 +1,598 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+	<title>Chat development version 2.0</title>
+	<style type="text/css">
+		BODY {
+			background-color:white;	
+			margin:0px;
+			font-family:Arial,verdana,times;
+			font-size:11px;
+		}
+		
+		#toptable {
+			
+		}
+		
+		#userview {
+			height:357px;
+			overflow:auto;
+			border-top:1px solid #ababff;	
+			border-bottom:1px solid #ababff;	
+		}
+		.systemmessages {
+			
+			height:100px;
+		}
+		
+		.messagetd {
+			padding:5px;
+		}
+		
+		.buttons {
+			
+			padding:5px;
+		}
+		
+		#userviewtable {
+			
+		}
+		
+		#contenttable {
+			
+		}
+		
+		#contenttd {
+			
+		}
+		
+		.left {
+			
+		}
+		
+		.content {
+			height:407px;		
+			border:1px solid #ababff;	
+			
+			overflow:auto;
+		}
+		.user	{
+			border:1px solid #9999ff;			
+		}
+		
+		.userimagetd {
+			border:none;
+		}
+		
+		.userimage {
+			border:1px solid black;
+			width:40px;
+			height:30px;
+					
+		}
+		
+		.usertext {
+			font-family:arial, times;
+			font-size:13px;
+			color:black;
+		}
+	</style>
+	<script type="text/javascript" src="js/observables.js"></script>
+	<!--<script type="text/javascript" src="js/lists.js"></script>-->
+	<script type="text/javascript" src="js/chatclient.js"></script>
+	<script type="text/javascript" id="lists">
+		
+		function Message(id, handle, message) {
+			this.id = id;
+			this.handle = handle;
+			this.message = message;		
+			this.toString = function() {
+				return "Message";
+			}
+		}
+		
+		
+		function PrivateMessage(id, handle, message) {
+			this.id = id;
+			this.handle = handle;
+			this.message = message;
+		}
+		
+		/**
+		*	Write something...
+		*/
+		Object.prototype.equals = function(obj) {				
+			if(typeof obj == "object") {
+				if(this == obj)
+					return true;
+			}
+			return false;
+		}
+		
+		
+		/*
+		*
+		*/
+		function ListIterator(list) {
+			var list = list;
+			var index = 0;
+			var currentItem = null;
+			
+			this.first = function() {
+				currentItem = list.elementAt(0);	
+			}
+			
+			this.next = function() {
+				if(!this.isDone()) {
+					currentItem = list.elementAt(++index);	
+				}		
+			}
+			this.isDone = function() {
+				if(index == list.count())
+					return true;
+				return false;	
+			}
+			this.item = function() {
+				return currentItem;
+			}	
+			this.reset = function() {
+				currentItem = null;
+				index = 0;
+			}
+		}
+		
+		//this.listeners = new Array();this.notifyObservers();	
+		/*
+		*	LIST
+		*/
+		function List() {
+			/* private: */
+			var listItems = new Array();
+			
+			
+			this.sort = function(sortfunc) {
+				if(sortfunc)
+					listItems.sort(sortfunc);
+				else
+					listItems.sort();
+			}
+			
+			this.count = function() {
+				return listItems.length;	
+			}	
+			
+			this.clear = function() {
+				listItems = new Array();							
+			}
+			
+			this.add = function(obj) {
+				listItems.push(obj);					
+			}
+			
+			this.remove = function(obj) {
+				for(var i=0;i<listItems.length;i++) {		
+					if(obj.equals(listItems[i])) {					
+						listItems.splice(i, 1);	// removes obj from array						
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			this.elementAt = function(index) {
+				try {
+					return listItems[index];
+				} catch(e) {
+					throw e;	
+				}
+			}
+			
+			this.find = function(obj) {
+				for(var i=0;i<listItems.length;i++) {				
+					if(obj.equals(listItems[i]))
+						return obj;
+				}
+				return null;
+			}
+			
+			this.getIterator = function() {
+				return new ListIterator(this);	
+			}
+		}
+		
+		/* 
+		
+			Adapter to list 
+			
+			Extends Observable
+		*/
+		function MessageModel() {
+			this.listeners = new Array();
+			var list = new List;
+			
+			this.add = function(obj) {
+				list.add(obj);
+				this.notifyObservers(obj);	
+			}
+			
+			
+			this.count = list.count;
+			
+			this.clear = list.clear;
+			
+			this.elementAt = list.elementAt;
+		}
+		
+		MessageModel.prototype = new Observable;
+		
+		function MessageViewNew(model, elm) {
+		
+			var model = model;
+			model.addObserver(this);
+			
+			var me = this;
+			var element = elm;
+			var count = 0;
+			var html = "";
+			
+			function render() {
+				
+				var table = document.createElement("table");
+				
+				with(table) {
+					border = "1";
+					style.width = "100%";
+				}
+				html = table;
+				elm.appendChild(html);
+				
+			}
+		
+			this.update = function(sender, args) {
+				try {
+					if(args != null) {
+						var norows = (html.rows.length);
+						var td = html.insertRow(norows).insertCell(0);
+						td.innerHTML = "[" + args.handle + "] " + args.message;
+						if(td.scrollIntoView)
+							td.scrollIntoView(true);
+						else
+							td.focus();
+					}
+				} catch(e) {
+					alert(e);
+				}
+			}
+		
+			render();
+		}
+		
+		
+		
+		function User(id, name) {
+			this.id = id;
+			this.name = name.toString();						
+			
+			this.toString = function() {
+				return "User: [" + this.id +", " + this.name + "]";
+			}
+		}
+		
+		User.prototype.equals = function(obj) {
+			if(typeof obj == "object") {
+				if(obj.constructor == User) {
+					// Notice - parseInt and '+ ""' to make mozilla/firefox return true on comparison 
+					return (parseInt(obj["id"]) == parseInt(this["id"]) && ((obj["name"] + "") == (this["name"] + ""))) ? true : false;
+				}
+			}
+		}
+		
+		/* 
+		
+			Adapter to list 
+			
+			Extends Observable
+		*/
+		function UserList() {	
+			this.listeners = new Array();	
+			var list = new List;
+			
+			this.add = list.add;
+			
+			this.count = list.count
+			
+			this.elementAt = list.elementAt;
+			
+			this.find = list.find;
+			
+			this.clear = function() {
+				list.clear();
+				this.notifyObservers();					
+			}
+			
+			this.getIterator = list.getIterator;
+			
+			this.remove = function(obj) {
+				if(list.remove(obj))
+					this.notifyObservers(obj);					
+			}
+			
+			function sortUser(a, b) {						
+				// localeCompare JS version 1.5			
+				return (a["name"]).localeCompare((b["name"]));
+			}
+		
+			this.sort = function() {	
+				list.sort(sortUser);
+			}	
+			
+		}
+		
+		UserList.prototype = new Observable;
+		
+		
+		function UserView(model, elm) {
+			var model = model;
+			model.addObserver(this);
+			
+			var me = this;
+			var element = elm;
+			
+			
+			this.html;
+			
+			function render() {
+				var table = document.createElement("TABLE");
+				
+				table.border = "0";
+				table.style.width = "100%";
+				var iter = model.getIterator();
+			
+				/**
+				*	Iterate through Users.
+				*/
+				
+				var index = 0;
+				
+				for(iter.first();!iter.isDone();iter.next()) {
+					var user = iter.item();
+					
+					var tr = table.insertRow(index++);
+					var td = tr.insertCell(0);
+					td.className = "user";			
+					
+					td.setAttribute("id", user["id"]);
+					td.setAttribute("handle", user["name"]);
+					
+					if(window.user_id != user["id"]) {
+						td.onclick = function() {
+							setAsPrivate(this.id, this.handle);	
+						}					
+					} else if(window.user_id == user["id"]) {
+						td.onclick = function() {
+							alert("Du kan ikke snakke privat med dig selv .. ");
+						}	
+					}
+					
+					var imgtable = document.createElement("table");
+				
+					var imgtr = imgtable.insertRow(0); 
+					var imgtd = imgtr.insertCell(0); 
+					
+					imgtd.className = "userimage_td";
+					
+					var img = document.createElement("IMG");
+					img.onerror = function() {
+						this.src = "pics/bonde1.gif";
+					}
+					img.src = "pics/" + user["id"] + ".jpg";
+					img.className = "userimage";
+					
+					imgtd.appendChild(img);
+					
+					
+					var imgtdtext = imgtr.insertCell(1); 
+					
+					imgtdtext.className = "usertext";
+					imgtdtext.innerHTML = user["name"];//  + " " + user["id"];
+					
+					td.appendChild(imgtable);	
+					
+				}
+				if(element.firstChild)
+					element.replaceChild(table, element.firstChild);
+				else
+					element.appendChild(table);
+			}	
+			
+			this.setElement = function(elm) {
+				element = elm;	
+			}	
+			
+			this.update = function(obj) {
+				model.sort();
+				render();	
+			}
+						
+			render();
+			
+		}
+		
+	</script>
+	<script type="text/javascript">
+		var topwindow = top.frames["header"];
+		var chatApp;
+		var messagemodel, messageview, usermodel, userview, userview, content, contenttd, contenttable;
+		var messageBox1, messageBox2;
+		
+		document.fireOnlineEvent = function(obj) {
+		
+		}
+				
+		window.onresize = function() {
+		
+			var diff = 0;
+			diff += contenttable.rows[1].cells[0].clientHeight;
+			diff += contenttable.rows[2].cells[0].clientHeight;
+		
+			var cw = contenttable.clientWidth;
+			var ch = contenttable.clientHeight;			
+			var w = document.body.clientWidth;
+			var h = document.body.clientHeight;
+			var tw = contenttd.clientWidth;
+			var th = contenttd.clientHeight;
+			
+			//content.innerHTML= w + ", " + h + ": " + cw + ", " + ch + "; " + tw + ", " + th;
+			content.style.height = h - (diff + 23);		
+			userviewdiv.style.height = h - (145);	
+		}
+		
+		function init() {
+			
+			chatApp = document.getElementById("chatApp")
+		
+			isPrivate = 0;
+			
+			content = document.getElementById("content");
+			contenttd = document.getElementById("contenttd");
+			contenttable = document.getElementById("contenttable");
+			
+			message = document.getElementById("message");
+			message.focus();
+			message.onkeypress = keyCheck;
+			
+			btnConnect = document.getElementById("btnConnect");
+			btnSendAll = document.getElementById("btnSendAll");
+			btnSendAll.disabled = true;
+			btnDisconnect = document.getElementById("btnDisconnect");
+			btnSend = document.getElementById("btnSend");
+			
+			messagemodel = new MessageModel();
+			messageview = new MessageViewNew(messagemodel, content);
+			
+			usermodel = new UserList();
+			
+			userviewdiv = document.getElementById("userview");
+			
+			userview = new UserView(usermodel, userviewdiv);
+			
+			messageBox1 = document.getElementById("messageBox1");
+			messageBox2 = document.getElementById("messageBox2");
+			
+			/*
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			messagemodel.add(new Message(1, "Hria", "HEJ"));
+			*/
+			
+			
+			
+			for(var i=0;i<20;i++) {
+				usermodel.add(new User(1, "BRIAN"));
+				usermodel.notifyObservers();
+			}
+			
+			
+		}
+		
+		var x = 0;
+		var running = false;
+		
+		function testAll() {
+			message.value = x++;
+			OnSend();
+			setTimeout(testAll, 100);
+		}
+		
+		
+		function disconnect() {
+			
+			OnDisconnect();
+		}
+	</script>
+	
+</head>
+<body onload="init();">	
+
+	
+	<table border="0" width="100%" height="100%" id="toptable" cellpadding="0" cellspacing="0">
+		<tr>
+			<td colspan="2">UDVIKLINGS VERSION
+				<!----><APPLET 				
+					name="chatApp"
+					id="chatApp" 
+					height="0"
+					width="0"
+					code="tfud.client.ChatClientApplet.class" 
+					archive="archieves/chatclient.jar"
+					VIEWASTEXT 
+					MAYSCRIPT>
+					<PARAM NAME="serverhostname" VALUE="localhost" />
+					<PARAM NAME="port" VALUE="8900" />
+					<PARAM NAME="username" VALUE="brian"	/>
+					<PARAM NAME="password" VALUE="brian1234" />
+				</APPLET>
+				
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<table border="0" width="100%" height="100%" id="contenttable" name="contenttable" cellpadding="0" cellspacing="0">
+					<tr>
+						<td valign="top" id="contenttd">
+							<div id="content" class="content">								
+							</div>
+							<!---->
+						</td>						
+					</tr>
+					<tr>
+						<td id="messagetd" class="messagetd">
+							<input type="text" name="message" id="message" value="" style="width:400px"/>
+							<button name="btnSend" id="btnSend" accesskey="s" onclick="OnSend();"><u>S</u>end</button>
+						</td>
+					<tr>
+						<td id="buttons" class="buttons">
+							<input type="text" name="username" id="username" value="brian"/>
+							<input type="password" name="password" id="password" value="brian1234"/>
+							<input type="button" name="btnConnect" id="btnConnect" value="Tilslut" onclick="OnConnect();"/>
+							<input type="button" disabled="true" name="btnDisconnect" id="btnDisconnect" value="Afbryd" onclick="disconnect();"/>
+							<input type="button" name="btnSendAll" id="btnSendAll" value="Send til Alle" onclick="unSetPrivate();"/>
+						</td>
+					</tr>
+				</table>	
+			</td>
+			<td id="left" valign="top" width="200">
+				<table border="0" width="100%" height="100%" id="userviewtable" cellpadding="0" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<div id="userview" class="userview"></div>
+						</td>
+					</tr>
+					<tr>
+						<td class="systemmessages">
+							<table border="0" height="100%" width="100%">
+								<tr><td id="messageBox1">Du skriver til Alle&nbsp;</td></tr>
+								<tr><td><textarea id="messageBox2" style="width:200px;height:90px;"></textarea></td></tr>
+							</table>
+						</td>
+					</tr>
+				</table>		
+			</td>
+		</tr>
+	</table>
+	
+	
+</body>
+</html>
