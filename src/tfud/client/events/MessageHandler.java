@@ -55,6 +55,7 @@ public class MessageHandler implements MessageEventHandler {
                 /* NOTICE THIS MUST BE GIVEN MORE THOUGHTS */
                 break;
             default:
+                fireMessageReceived(p);
                 break;
         }
     }

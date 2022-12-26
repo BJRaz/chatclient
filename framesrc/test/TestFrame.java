@@ -30,7 +30,8 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
         client = c;
         client.addConnectionListener(this);
         client.addMessageListener(this);
-        client.setHandle("BRIANS CLIENT");
+        client.setID(1000);
+        client.setHandle("BJRAS");
         client.startClient();
         
         
@@ -237,5 +238,6 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     @Override
     public void connectionUpdated(ConnectionEvent conObj) {
         //
+        System.out.println("HER");
     }
 }

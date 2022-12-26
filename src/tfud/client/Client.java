@@ -40,12 +40,4 @@ public abstract class Client  {
      */
     protected abstract void handleConnection();
 
-    /**
-     * final run method run when started - calls handleConnection()
-     */
-//    @Override
-//    public final void run() {
-//        handleConnection();
-//    }
-
 }

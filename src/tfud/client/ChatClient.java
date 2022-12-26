@@ -74,7 +74,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                 wait();
             }
             outBuffer.addElement(new DataPackage(this.id, 0, this.handle, event, data));
-            releaseLock();
+            //releaseLock();
         }
     }
 
@@ -84,7 +84,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                 wait();
             }
             outBuffer.addElement(new DataPackage(this.id, target, this.handle, event, data));
-            releaseLock();
+            //releaseLock();
         }
     }
 
@@ -148,18 +148,21 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     }
 
     @Override
-    protected synchronized void handleConnection() {
+    protected void handleConnection() {
         try {
 
             Object res;
 
-            /* INIT */
-            Object[] data1 = new Object[2];
-            data1[0] = username;
-            data1[1] = password;
+            /**
+             * INIT 
+             */
+            
+            Object[] initialData = new Object[2];
+            initialData[0] = username;
+            initialData[1] = password;
 
-            output.writeObject(new DataPackage(this.id, 0, this.handle, "Online", data1));
-
+            output.writeObject(new DataPackage(this.id, 0, this.handle, "Online", initialData));
+            
             DataPackage data = (DataPackage) input.readObject();		// USERLIST, NOT ALLOWED TO LOGIN etc...
 
             this.id = data.getID();
@@ -167,17 +170,15 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
 
             output.writeObject(new DataPackage());
 
-            /* END INIT */
- /*
-                data = null;	
-                data = new DataPackage();	
-                data.setTargetID(0);
-                data.setHandle(this.handle);
-                data.setEventType("Message");
-                data.setData("");
+            /**
+             * END INIT 
              */
+            
             while (!finished) {
 
+                /**
+                 * READ INPUT
+                 */
                 // This reads messages from server ...
                 res = input.readObject();
 
@@ -198,27 +199,23 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                 }
 
                 /** 	
-                *   Empty outBuffer 
+                *   SET OUTPUT
                 *   for messages from this client to the server 
-                *
                 */
-                while(outBuffer.isEmpty()) {
-                    wait();
-                }
-                    
-                // removes first element in Vector 
-                // - in effect simulates an Queue but not that efficient
-                data = (DataPackage) outBuffer.remove(0);
+                if(!outBuffer.isEmpty()) {
+                    // removes first element in Lists
+                    // - in effect simulates an Queue but not that efficient
+                    data = (DataPackage) outBuffer.remove(0);
 
-                // Release lock as soon there's room in the Vector
-                // NOTICE - must be called from releaseLock function (sync) - otherwise 
-                //	Thread-Not-Owner Exception thrown
-                releaseLock();
+                    // Release lock as soon there's room in the List
+                    // NOTICE - must be called from releaseLock function (sync) - otherwise 
+                    //	Thread-Not-Owner Exception thrown
+                    // releaseLock();
 
-                //DEBUG
-                System.out.println("Eating from MessageBuffer - now size: " + outBuffer.size());
-
-                output.writeObject(data);
+                    output.writeObject(data);
+                } else
+                    output.writeObject(new DataPackage());
+                   
 
             }
 
