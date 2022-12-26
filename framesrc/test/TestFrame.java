@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import tfud.client.ChatClient;
 import tfud.communication.DataPackage;
+import tfud.events.EventType;
 import tfud.events.ConnectionEvent;
 import tfud.events.ConnectionListener;
 import tfud.events.MessageListener;
@@ -20,21 +21,23 @@ import tfud.events.MessageListener;
  */
 public class TestFrame extends javax.swing.JFrame implements MessageListener, ConnectionListener {
 
+    private String myId;
+
     /**
      * Creates new form TestFrame
+     *
      * @param c
      */
-    public TestFrame(ChatClient c) {
+    public TestFrame(ChatClient c, String id) {
         initComponents();
-        
+        myId = id;
         client = c;
         client.addConnectionListener(this);
         client.addMessageListener(this);
         client.setID(1000);
-        client.setHandle("BJRAS");
+        client.setHandle(myId);
         client.startClient();
-        
-        
+
     }
 
     /**
@@ -49,6 +52,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
         jPanel1 = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
         jTextField1 = new javax.swing.JTextField();
+        jTextField2 = new javax.swing.JTextField();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
@@ -72,9 +76,11 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jButton1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
+                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(56, 56, 56))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -82,8 +88,9 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
                 .addGap(15, 15, 15)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(12, Short.MAX_VALUE))
         );
 
         jTextArea1.setColumns(20);
@@ -115,8 +122,8 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -124,7 +131,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
@@ -135,7 +142,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         try {
             // TODO add your handling code here:
-            client.setMessage("TEST", jTextField1.getText());
+            client.setMessage(EventType.MESSAGE, jTextField1.getText());
         } catch (InterruptedException ex) {
             Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -167,19 +174,20 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             java.util.logging.Logger.getLogger(TestFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    new TestFrame(new ChatClient("localhost", 8900)).setVisible(true);
-                } catch (IOException ex) {
-                    Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
+        try {
+            TestFrame f = new TestFrame(new ChatClient("localhost", 8900), args[0]);
+
+            /* Create and display the form */
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    f.setVisible(true);
                 }
-            }
-        });
+            });
+        } catch (IOException ex) {
+            Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
-    
+
     private final ChatClient client;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
@@ -188,56 +196,56 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void messageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
+        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void privateMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
-    }
-
-    @Override
-    public void offlineMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
-    }
-
-    @Override
-    public void onlineMessageReceived(Object source, Object data) {
-       jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
+        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void loginMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
+        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void serverMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
-    }
-
-    @Override
-    public void awayMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
-    }
-
-    @Override
-    public void userListReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
-    }
-
-    @Override
-    public void changeRoomReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage)data).getData().toString() + "\n");
+        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void connectionUpdated(ConnectionEvent conObj) {
-        //
         System.out.println("HER");
+    }
+
+    @Override
+    public void statusMessageReceived(Object source, Object data) {
+        DataPackage p = (DataPackage) data;
+        switch (p.getEventType()) {
+
+            case ONLINE:
+                if (p.getHandle() == null ? myId == null : p.getHandle().equals(myId)) // TODO ID type must match
+                {
+                    jTextField2.setText("Nu online");
+                } else {
+                    jTextArea1.append(p.getHandle() + " er nu online\n");
+                }
+                break;
+            case OFFLINE:
+                if (p.getHandle() == null ? myId == null : p.getHandle().equals(myId)) // TODO ID type must match
+                {
+                    jTextField2.setText("Er nu offline");
+                } else {
+                    jTextArea1.append(p.getHandle() + " er nu offline\n");
+                }
+                break;
+        }
+        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
     }
 }

@@ -1,10 +1,12 @@
 package tfud.client;
 
+import tfud.events.EventType;
+import tfud.events.MessageEventHandler;
+import tfud.events.ConnectionEventHandler;
 import java.io.*;
 import java.util.*;
 import tfud.events.*;
 import tfud.communication.*;
-import tfud.client.events.*;
 
 /**
  * @author BJR
@@ -67,7 +69,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
      * @param data
      * @throws InterruptedException
      */
-    public synchronized void setMessage(String event, String data) throws InterruptedException {
+    public synchronized void setMessage(EventType event, String data) throws InterruptedException {
         if (!isStopped()) {
             while (outBuffer.size() == MAXBUFFERLENGTH) // if vector full wait
             {
@@ -78,7 +80,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
         }
     }
 
-    public synchronized void setMessage(int target, String event, String data) throws InterruptedException {
+    public synchronized void setMessage(int target, EventType event, String data) throws InterruptedException {
         if (!isStopped()) {
             while (outBuffer.size() == MAXBUFFERLENGTH) {
                 wait();
@@ -161,7 +163,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
             initialData[0] = username;
             initialData[1] = password;
 
-            output.writeObject(new DataPackage(this.id, 0, this.handle, "Online", initialData));
+            output.writeObject(new DataPackage(this.id, 0, this.handle, EventType.ONLINE, initialData));
             
             DataPackage data = (DataPackage) input.readObject();		// USERLIST, NOT ALLOWED TO LOGIN etc...
 

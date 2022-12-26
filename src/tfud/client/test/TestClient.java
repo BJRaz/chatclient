@@ -2,6 +2,7 @@ package tfud.client.test;
 
 import java.io.IOException;
 import tfud.client.ChatClient;
+import tfud.events.EventType;
 
 public class TestClient {
 
@@ -11,7 +12,7 @@ public class TestClient {
         ChatClient t = new ChatClient("localhost", 8900);
 
         t.startClient();
-        t.setMessage("test", "test");
+        t.setMessage(EventType.DUMMY, "test");
         //client = new tfud.client.ChatClientFrame(t);
     }
 

@@ -6,7 +6,9 @@ import netscape.javascript.*;
 import java.awt.*;
 import javax.swing.*;
 import tfud.client.ChatClient;
-import tfud.client.events.*;
+import tfud.events.EventType;
+import tfud.events.ConnectionHandler;
+
 
 /**
  * @author BJR
@@ -116,7 +118,7 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
     }
 
     // Delegate function
-    public void setMessage(String event, String data) throws InterruptedException {
+    public void setMessage(EventType event, String data) throws InterruptedException {
         if (!client.isStopped()) {
             client.setMessage(event, data);
         }
@@ -124,7 +126,7 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
     }
 
     // Delegate function 
-    public void setPrivateMessage(int target, String event, String data) throws InterruptedException {
+    public void setPrivateMessage(int target, EventType event, String data) throws InterruptedException {
         if (!client.isStopped()) {
             client.setMessage(target, event, data);
         }
@@ -222,5 +224,10 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
 
     public int getID() {
         return id;
+    }
+
+    @Override
+    public void statusMessageReceived(Object source, Object data) {
+         delegateMessageReceived("OnStatusMessageReceived", data);
     }
 }
