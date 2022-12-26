@@ -1,11 +1,12 @@
-package tfud.client;
+package tfud.client.applets;
 
 // JSObject support?
 import netscape.javascript.*;
 
 import java.awt.*;
 import javax.swing.*;
-import tfud.events.*;
+import tfud.client.ChatClient;
+import tfud.client.events.*;
 
 /**
  * @author BJR
@@ -87,8 +88,8 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
 
             client = new ChatClient(host, 8900);
 
-            client.handler.addMessageListener(this);
-            client.connhandler.addConnectionListener(this);
+            client.addMessageListener(this);
+            client.addConnectionListener(this);
 
             client.setHandle(username);
             /* TEST */

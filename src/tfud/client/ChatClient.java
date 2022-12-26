@@ -4,11 +4,12 @@ import java.io.*;
 import java.util.*;
 import tfud.events.*;
 import tfud.communication.*;
+import tfud.client.events.*;
 
 /**
  * @author BJR
  */
-public class ChatClient extends Client {
+public class ChatClient extends Client implements Runnable, MessageEventHandler, ConnectionEventHandler {
 
     protected final static int MAXBUFFERLENGTH = 50;
     protected Vector outBuffer;
@@ -29,10 +30,13 @@ public class ChatClient extends Client {
 
     protected MessageHandler handler;
     protected ConnectionHandler connhandler;
+    
+    private final Thread t = new Thread(this);
 
     /**
      * @param	serveraddress string the domainaddress or TCP/IP address of server
      * @param	port	int of port to connect to
+     * @throws java.io.IOException
      */
     public ChatClient(String serveraddress, int port) throws IOException {
 
@@ -56,6 +60,13 @@ public class ChatClient extends Client {
 
     }
 
+    /**
+     * Adds a message to the output buffer to be sent to server.
+     * 
+     * @param event
+     * @param data
+     * @throws InterruptedException
+     */
     public synchronized void setMessage(String event, String data) throws InterruptedException {
         if (!isStopped()) {
             while (outBuffer.size() == MAXBUFFERLENGTH) // if vector full wait
@@ -63,6 +74,7 @@ public class ChatClient extends Client {
                 wait();
             }
             outBuffer.addElement(new DataPackage(this.id, 0, this.handle, event, data));
+            releaseLock();
         }
     }
 
@@ -72,6 +84,7 @@ public class ChatClient extends Client {
                 wait();
             }
             outBuffer.addElement(new DataPackage(this.id, target, this.handle, event, data));
+            releaseLock();
         }
     }
 
@@ -85,7 +98,8 @@ public class ChatClient extends Client {
 
     public void startClient() {
         if (finished) {
-            start();				// Thread.start()
+            
+            t.start();
             finished = false;
         }
     }
@@ -101,7 +115,6 @@ public class ChatClient extends Client {
 
         } catch (IOException io) {
             System.out.println("STOP: IO close failed: " + io.getMessage());
-            io.printStackTrace();
         }
 
     }
@@ -134,49 +147,47 @@ public class ChatClient extends Client {
         this.password = password;
     }
 
-    protected void handleConnection() {
+    @Override
+    protected synchronized void handleConnection() {
         try {
 
-            Object res = null;
+            Object res;
 
             /* INIT */
             Object[] data1 = new Object[2];
-            data1[0] = new String(username);
-            data1[1] = new String(password);
+            data1[0] = username;
+            data1[1] = password;
 
             output.writeObject(new DataPackage(this.id, 0, this.handle, "Online", data1));
 
             DataPackage data = (DataPackage) input.readObject();		// USERLIST, NOT ALLOWED TO LOGIN etc...
-            //System.out.println("HER: " + data);
+
             this.id = data.getID();
             this.handler.handleMessage(data);
 
             output.writeObject(new DataPackage());
 
             /* END INIT */
- /*data = null;	
-				
-			data = new DataPackage();	
-			data.setTargetID(0);
-			data.setHandle(this.handle);
-			data.setEventType("Message");
-			data.setData("");
+ /*
+                data = null;	
+                data = new DataPackage();	
+                data.setTargetID(0);
+                data.setHandle(this.handle);
+                data.setEventType("Message");
+                data.setData("");
              */
             while (!finished) {
-
-                res = null;
 
                 // This reads messages from server ...
                 res = input.readObject();
 
-                //if(res.length() > 0) {	
                 if (res instanceof DataPackage) {
                     // can cause null exception - (res can be null is connection is down)
                     // Alert message listeners
                     /*
-					 *	Here insert a handler of messages 
-					 *	handler should parse message - and raise events respectively
-					 **/
+                    *	Here insert a handler of messages 
+                    *	handler should parse message - and raise events respectively
+                    */
 
                     data = (DataPackage) res;
 
@@ -186,48 +197,37 @@ public class ChatClient extends Client {
 
                 }
 
-                /* 	Empty outBuffer 
-				 *	for messages from this client to the server 
-				 *
-				 **/
-                if (outBuffer.size() > 0) {
-
-                    // removes first element in Vector 
-                    // - in effect simulates an Queue but not that efficient
-                    data = (DataPackage) outBuffer.remove(0);
-
-                    // Release lock as soon there's room in the Vector
-                    // NOTICE - must be called from releaseLock function (sync) - otherwise 
-                    //	Thread-Not-Owner Exception thrown
-                    releaseLock();
-
-                    //DEBUG
-                    System.out.println("Eating from MessageBuffer - now size: " + outBuffer.size());
-
-                    output.writeObject(data);
-                    data = null;
-                } else {
-                    // write null for optimizing network and memory usage
-                    output.writeObject(null);
-
+                /** 	
+                *   Empty outBuffer 
+                *   for messages from this client to the server 
+                *
+                */
+                while(outBuffer.isEmpty()) {
+                    wait();
                 }
+                    
+                // removes first element in Vector 
+                // - in effect simulates an Queue but not that efficient
+                data = (DataPackage) outBuffer.remove(0);
+
+                // Release lock as soon there's room in the Vector
+                // NOTICE - must be called from releaseLock function (sync) - otherwise 
+                //	Thread-Not-Owner Exception thrown
+                releaseLock();
+
+                //DEBUG
+                System.out.println("Eating from MessageBuffer - now size: " + outBuffer.size());
+
+                output.writeObject(data);
+
             }
 
         } catch (java.security.AccessControlException a) {
-            System.out.println("Access Execption: " + a.getMessage());
-            // DEBUG
-            //io.printStackTrace();
             this.connhandler.fireConnectionUpdated("Access denied while connecting - SET serverhostname in <PARAM .. >\n" + a.getMessage());
         } catch (IOException io) {
-            System.out.println("ChatClient IOExecption: " + io.getMessage());
-            // DEBUG
-            io.printStackTrace();
             this.connhandler.fireConnectionUpdated(io.getMessage());
         } catch (Exception e) {
-            //DEBUG
-            System.out.println("Chat client general error: " + e.getMessage());
             this.connhandler.fireConnectionUpdated("General error: " + e.getMessage());
-            e.printStackTrace();
         } finally {
             try {
 
@@ -235,12 +235,8 @@ public class ChatClient extends Client {
 
             } catch (IOException o) {
                 System.out.println("IO Error in closing I/O ; " + o.getMessage() + "\n");
-                // DEBUG
-                o.printStackTrace();
             } catch (Exception e) {
                 System.out.println("General Closing IO; " + e.getMessage() + "\n");
-                // DEBUG
-                e.printStackTrace();
             } finally {
                 outBuffer.clear();
                 finished = true;
@@ -258,5 +254,21 @@ public class ChatClient extends Client {
     private synchronized void releaseLock() {
         notifyAll();
     }
+
+    @Override
+    public void run() {
+        handleConnection();
+    }
+
+    @Override
+    public void addMessageListener(MessageListener m) {
+        this.handler.addMessageListener(m);
+    }
+
+    @Override
+    public void addConnectionListener(ConnectionListener c) {
+        this.connhandler.addConnectionListener(c);
+    }
+
 
 }
