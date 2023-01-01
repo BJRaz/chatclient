@@ -34,6 +34,11 @@ public abstract class Client  {
 
     }
 
+    public Client() 
+    {
+        
+    }
+    
     /**
      * Abstract Method handleConnection Must be overriden i subclass -
      * implemented as Template Method Pattern

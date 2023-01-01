@@ -5,10 +5,9 @@
  */
 package test;
 
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import tfud.client.ChatClient;
+import tfud.client.*;
 import tfud.communication.DataPackage;
 import tfud.events.EventType;
 import tfud.events.ConnectionEvent;
@@ -20,24 +19,99 @@ import tfud.events.MessageListener;
  * @author brian
  */
 public class TestFrame extends javax.swing.JFrame implements MessageListener, ConnectionListener {
-
     private String myId;
+    private State state;
+    /**
+     * */
+    protected abstract class State
+    {
+        abstract void Connect();
+        
+        abstract void Disconnect();
+        
+        abstract void SendMessage();
+    }
+    
+    protected class ConnectedState extends State
+    {
 
+        public ConnectedState() {
+            jID.setEnabled(false);
+            jHandle.setEnabled(false);
+            jChangeState.setText("Disconnect");
+        }
+
+
+        
+        @Override
+        void Connect() {
+            Disconnect();
+        }
+
+        @Override
+        void Disconnect() {
+            client.stopClient();
+            state = new DisconnectedState();
+            setStatus("Disconnected");
+        }
+
+        @Override
+        void SendMessage() {
+            try {
+                // TODO add your handling code here:
+                client.setMessage(EventType.MESSAGE, jTextField1.getText());
+            } catch (InterruptedException ex) {
+                Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    
+    }
+    
+    
+    protected class DisconnectedState extends State
+    {
+        public DisconnectedState() {
+            jID.setEnabled(true);
+            jHandle.setEnabled(true);
+            jChangeState.setText("Connect");
+        }
+        
+        @Override
+        void Connect() {
+             // TODO add your handling code here:
+            try {
+                client.startClient();
+                state = new ConnectedState();
+                setStatus("Connected");
+            } catch (Exception e) {
+                setStatus("ERROR:  " + e.getMessage());
+            }
+
+        }
+
+        @Override
+        void Disconnect() {
+            // do nothing
+        }
+
+        @Override
+        void SendMessage() {
+            setStatus("System is in disconnected state");
+        }
+    }
+    
+    
+    
+    
     /**
      * Creates new form TestFrame
      *
      * @param c
      */
-    public TestFrame(ChatClient c, String id) {
+    public TestFrame(ChatClient c) {
         initComponents();
-        myId = id;
         client = c;
-        client.addConnectionListener(this);
-        client.addMessageListener(this);
-        client.setID(1000);
-        client.setHandle(myId);
-        client.startClient();
-
+        state = new DisconnectedState();
     }
 
     /**
@@ -50,47 +124,75 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
-        jButton1 = new javax.swing.JButton();
-        jTextField1 = new javax.swing.JTextField();
-        jTextField2 = new javax.swing.JTextField();
+        jStatus = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
+        jID = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jHandle = new javax.swing.JTextField();
+        jChangeState = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
+        jTextField1 = new javax.swing.JTextField();
+        jBtnSendMessage = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jButton1.setText("Send message");
-        jButton1.setName("btnMessage"); // NOI18N
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        jLabel1.setText("Status");
+
+        jLabel2.setText("ID:");
+
+        jLabel3.setText("Handle:");
+
+        jChangeState.setText("Connect");
+        jChangeState.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                jChangeStateActionPerformed(evt);
             }
         });
-
-        jTextField1.setText("Test message");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jButton1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 33, Short.MAX_VALUE)
-                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(56, 56, 56))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jStatus, javax.swing.GroupLayout.PREFERRED_SIZE, 449, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jChangeState)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 77, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(18, 18, 18)
+                            .addComponent(jHandle, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 77, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(jID, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(35, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(15, 15, 15)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton1)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(12, Short.MAX_VALUE))
+                    .addComponent(jID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jHandle, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jChangeState)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jStatus, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
 
         jTextArea1.setColumns(20);
@@ -104,49 +206,64 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 483, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE)
-                .addContainerGap())
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 136, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(45, 45, 45))
         );
+
+        jBtnSendMessage.setText("Send message");
+        jBtnSendMessage.setName("btnMessage"); // NOI18N
+        jBtnSendMessage.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jBtnSendMessageActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 435, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jBtnSendMessage))
                     .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jBtnSendMessage))
+                .addGap(4, 4, 4))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        try {
-            // TODO add your handling code here:
-            client.setMessage(EventType.MESSAGE, jTextField1.getText());
-        } catch (InterruptedException ex) {
-            Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void jBtnSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnSendMessageActionPerformed
+        state.SendMessage();
+    }//GEN-LAST:event_jBtnSendMessageActionPerformed
+
+    private void jChangeStateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jChangeStateActionPerformed
+        state.Connect();
+    }//GEN-LAST:event_jChangeStateActionPerformed
 
     /**
      * @param args the command line arguments
@@ -175,53 +292,64 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
         }
         //</editor-fold>
         try {
-            TestFrame f = new TestFrame(new ChatClient("localhost", 8900), args[0]);
+            ChatClient c = new ChatClient("localhost", 8900);
+            TestFrame f = new TestFrame(c);
+            c.addConnectionListener(f);
+            c.addMessageListener(f);
+        
 
             /* Create and display the form */
             java.awt.EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     f.setVisible(true);
+                    
                 }
             });
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private final ChatClient client;
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jBtnSendMessage;
+    private javax.swing.JButton jChangeState;
+    private javax.swing.JTextField jHandle;
+    private javax.swing.JTextField jID;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTextField jStatus;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void messageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
+        insertMessage(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void privateMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
+        insertMessage(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void loginMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
+        insertMessage(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void serverMessageReceived(Object source, Object data) {
-        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
+        insertMessage(((DataPackage) data).getData().toString() + "\n");
     }
 
     @Override
     public void connectionUpdated(ConnectionEvent conObj) {
-        System.out.println("HER");
+        insertMessage(conObj.getCommand());
     }
 
     @Override
@@ -232,20 +360,28 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             case ONLINE:
                 if (p.getHandle() == null ? myId == null : p.getHandle().equals(myId)) // TODO ID type must match
                 {
-                    jTextField2.setText("Nu online");
+                    setStatus("Nu online");
                 } else {
-                    jTextArea1.append(p.getHandle() + " er nu online\n");
+                    insertMessage(p.getHandle() + " er nu online\n");
                 }
                 break;
             case OFFLINE:
                 if (p.getHandle() == null ? myId == null : p.getHandle().equals(myId)) // TODO ID type must match
                 {
-                    jTextField2.setText("Er nu offline");
+                    setStatus("Er nu offline");
                 } else {
-                    jTextArea1.append(p.getHandle() + " er nu offline\n");
+                    insertMessage(p.getHandle() + " er nu offline\n");
                 }
                 break;
         }
-        jTextArea1.append(((DataPackage) data).getData().toString() + "\n");
+        insertMessage(((DataPackage) data).getData().toString() + "\n");
+    }
+
+    private void insertMessage(String msg) {
+        jTextArea1.append(msg);
+    }
+
+    private void setStatus(String msg) {
+        jStatus.setText(msg);
     }
 }

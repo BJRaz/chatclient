@@ -4,6 +4,7 @@ import tfud.events.EventType;
 import tfud.events.MessageEventHandler;
 import tfud.events.ConnectionEventHandler;
 import java.io.*;
+import java.net.Socket;
 import java.util.*;
 import tfud.events.*;
 import tfud.communication.*;
@@ -34,21 +35,21 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     protected ConnectionHandler connhandler;
     
     private final Thread t = new Thread(this);
+    private final int port;
 
     /**
      * @param	serveraddress string the domainaddress or TCP/IP address of server
      * @param	port	int of port to connect to
      * @throws java.io.IOException
      */
-    public ChatClient(String serveraddress, int port) throws IOException {
+    public ChatClient(String serveraddress, int port) {
 
-        super(serveraddress, port);
+        super();
 
-        /* set object streams */
-        output = new ObjectOutputStream(out);
-        input = new ObjectInputStream(in);
+        
 
         this.serverhost = serveraddress;
+        this.port = port;
 
         this.id = 0;
         this.handle = "";
@@ -98,9 +99,14 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
         this.handle = handle;
     }
 
-    public void startClient() {
+    public void startClient() throws IOException {
         if (finished) {
-            
+            server = new Socket(serverhost, port);
+            out = server.getOutputStream();
+            in = server.getInputStream();
+            /* set object streams */
+            output = new ObjectOutputStream(out);
+            input = new ObjectInputStream(in);
             t.start();
             finished = false;
         }
