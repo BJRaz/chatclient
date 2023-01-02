@@ -60,7 +60,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             try {
                 // TODO add your handling code here:
                 client.setMessage(EventType.MESSAGE, jTextField1.getText());
-            } catch (InterruptedException ex) {
+            } catch (Exception ex) {
                 Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
         }

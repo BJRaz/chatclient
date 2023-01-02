@@ -6,22 +6,26 @@ import tfud.events.EventType;
 
 public class TestClient {
 
-    //private tfud.client.ChatClientFrame client;
-
-    public TestClient() throws IOException, InterruptedException {
-        ChatClient t = new ChatClient("localhost", 8900);
-
-        t.startClient();
-        t.setMessage(EventType.DUMMY, "test");
-        //client = new tfud.client.ChatClientFrame(t);
+    ChatClient t;
+    
+    public TestClient() {
+        t = new ChatClient("localhost", 8900);
+        
     }
 
-//    public static void main(String[] args) throws IOException {
-//        try {
-//            TestClient tc = new TestClient();
-//        } catch (InterruptedException ex) {
-//            Logger.getLogger(TestClient.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
+    public void test() throws IOException, InterruptedException {
+        t.setMessage(EventType.ONLINE, null);
+        t.setMessage(EventType.ONLINE, null);
+        t.startClient();
+    }
+    
+    public static void main(String[] args) {
+        try {
+            TestClient tc = new TestClient();
+            tc.test();
+        } catch (IOException | InterruptedException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
 
 }

@@ -101,8 +101,6 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
             client.startClient();
             System.out.println("Starting client");
 
-        } catch (java.io.IOException io) {
-            connhandler.fireConnectionUpdated(io.getMessage());
         } catch (Exception e) {
             System.out.println("Error onConnect: " + e.getMessage());
         }
