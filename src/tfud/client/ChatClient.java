@@ -5,6 +5,7 @@ import tfud.events.MessageEventHandler;
 import tfud.events.ConnectionEventHandler;
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketImpl;
 import java.util.*;
 import tfud.events.*;
 import tfud.communication.*;
@@ -33,7 +34,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     protected MessageHandler handler;
     protected ConnectionHandler connhandler;
 
-    private final Thread t = new Thread(this);
+    private Thread t;
     private Object res;
     private DataPackage data;
 
@@ -44,7 +45,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     public ChatClient(String serveraddress, int port) {
 
         super();
-        
+
         finished = true;
 
         id = 0;
@@ -70,8 +71,9 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
      * @param data
      */
     public synchronized void setMessage(EventType event, String data) {
-        if(event == null || data == null)
+        if (event == null || data == null) {
             throw new NullPointerException("event arg must not be null");
+        }
         if (!isStopped()) {
 //            while (outBuffer.size() == MAXBUFFERLENGTH) // if vector full wait
 //            {
@@ -100,9 +102,32 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
         this.handle = handle;
     }
 
-    public void startClient() throws IOException {
+    public void startClient() {
         if (isStopped()) {
-            t.start();
+            t = new Thread(this); 
+            switch(t.getState()) {
+            
+                case NEW:
+                    t.start();
+                    break;
+                case RUNNABLE:
+                    System.out.print(1);
+                    break;
+                case BLOCKED:
+                    System.out.print(2);
+                    break;
+                case WAITING:
+                    System.out.print(3);
+                    break;
+                case TIMED_WAITING:
+                    System.out.print(4);
+                    break;
+                case TERMINATED:
+                    System.out.print(5);
+                    break;
+            
+            }
+            
             finished = false;
         }
     }
@@ -110,7 +135,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     public void stopClient() {
         if (!isStopped()) {
             finished = true;
-            closeIO();
+            t = null;
         }
     }
 
@@ -142,9 +167,15 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
 
     protected void closeIO() {
         try {
-            output.close();
-            input.close();
-            server.close();
+            if (output != null) {
+                output.close();
+            }
+            if (input != null) {
+                input.close();
+            }
+            if (server != null) {
+                server.close();
+            }
         } catch (IOException o) {
             this.connhandler.fireConnectionUpdated("IO Error in closing I/O ; " + o.getMessage());
         }
@@ -156,7 +187,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
 
     @Override
     public void run() {
-        start();
+        execute();
     }
 
     @Override
@@ -229,7 +260,6 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
             //            } catch (InterruptedException e) {
             //                connhandler.fireConnectionUpdated(e.getMessage());
             //            }
-
         }
     }
 
@@ -242,6 +272,13 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
 
         try {
 
+            /**
+             * PROTOCOL:
+             *
+             * 1) send a ONLINE event to server 2) read LOGIN event response
+             * from server. 3) read USERLIST event response from server.
+             *
+             */
             server = new Socket(serverhost, port);
             out = server.getOutputStream();
             in = server.getInputStream();
@@ -250,17 +287,21 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
             output = new ObjectOutputStream(out);
             input = new ObjectInputStream(in);
 
-            output.writeObject(new DataPackage(this.id, 0, this.handle, EventType.ONLINE, initialData));
+            output.writeObject(new DataPackage(this.id, 0, this.handle, EventType.ONLINE, initialData));    // 1) send ONLINE event
 
-            data = (DataPackage) input.readObject();		// USERLIST, NOT ALLOWED TO LOGIN etc...
+            data = (DataPackage) input.readObject();                                                        // 2) receive LOGIN event
 
-            this.id = data.getID();
-            this.handler.handleMessage(data);
+            id = data.getID();                                                                              // - get ID from server (?)
+            handler.handleMessage(data);                                                                    // - handle the response from server
 
-            output.writeObject(new DataPackage());
-
+            output.writeObject(new DataPackage());                                                          // send DUMMY event to server 
+            data = (DataPackage) input.readObject();                                                        // 3) receive USERLIST event
+            handler.handleMessage(data);                                                                    // - handle the response from server
+            
         } catch (IOException | ClassNotFoundException e) {
             this.connhandler.fireConnectionUpdated(e.getMessage());
+            finished = true;
+           
         }
 
     }
@@ -269,10 +310,10 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
     protected void handleConnection() {
         try {
             //            Thread in = new Thread(new INPUT());
-            //            in.start();
+            //            in.execute();
             //
             //            Thread out = new Thread(new OUTPUT());
-            //            out.start();
+            //            out.execute();
             while (!isStopped()) {
                 res = input.readObject();
 
@@ -286,7 +327,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
 
                     data = (DataPackage) res;
 
-                    if (data.getData() != null && !data.getData().toString().equals("")) {
+                    if (data.getEventType() != EventType.DUMMY) {
                         handler.handleMessage(data);
                     }
                 }

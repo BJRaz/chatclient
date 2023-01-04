@@ -133,7 +133,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
         jChangeState = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        jTextMessages = new javax.swing.JTextArea();
         jTextField1 = new javax.swing.JTextField();
         jBtnSendMessage = new javax.swing.JButton();
 
@@ -195,10 +195,10 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
                 .addContainerGap())
         );
 
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jTextArea1.setName("text1"); // NOI18N
-        jScrollPane1.setViewportView(jTextArea1);
+        jTextMessages.setColumns(20);
+        jTextMessages.setRows(5);
+        jTextMessages.setName("text1"); // NOI18N
+        jScrollPane1.setViewportView(jTextMessages);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -323,8 +323,8 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField jStatus;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextArea jTextMessages;
     // End of variables declaration//GEN-END:variables
 
     @Override
@@ -349,7 +349,13 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
 
     @Override
     public void connectionUpdated(ConnectionEvent conObj) {
-        insertMessage(conObj.getCommand());
+        String command = conObj.getCommand();
+        switch(command) {
+            case "Connection refused":
+                state.Disconnect();
+                break;
+        }
+        insertMessage(command);
     }
 
     @Override
@@ -378,7 +384,7 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     }
 
     private void insertMessage(String msg) {
-        jTextArea1.append(msg);
+        jTextMessages.append(msg);
     }
 
     private void setStatus(String msg) {

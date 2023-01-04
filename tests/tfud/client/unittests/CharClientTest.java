@@ -40,7 +40,7 @@ public class CharClientTest {
     c.addMessageListener(null);
     c.isStopped();
     c.setHandle(null);
-    c.start();
+    c.execute();
     c.stopClient();
   }
 }
