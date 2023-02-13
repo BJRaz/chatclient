@@ -177,7 +177,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                 server.close();
             }
         } catch (IOException o) {
-            this.connhandler.fireConnectionUpdated("IO Error in closing I/O ; " + o.getMessage());
+            this.connhandler.fireConnectionUpdated(new ConnectionEvent(this, "IO Error in closing I/O ; " + o.getMessage()));
         }
     }
 
@@ -232,11 +232,11 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                     }
                 }
             } catch (IOException e) {
-                connhandler.fireConnectionUpdated(e.getMessage());
+                connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
             } catch (ClassNotFoundException e) {
-                connhandler.fireConnectionUpdated(e.getMessage());
+                connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
             } catch (InterruptedException e) {
-                connhandler.fireConnectionUpdated(e.getMessage());
+                connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
             }
 
         }
@@ -299,7 +299,7 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
             handler.handleMessage(data);                                                                    // - handle the response from server
             
         } catch (IOException | ClassNotFoundException e) {
-            this.connhandler.fireConnectionUpdated(e.getMessage());
+            this.connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
             finished = true;
            
         }
@@ -351,11 +351,11 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
                 }
             }
         } catch (java.security.AccessControlException e) {
-            this.connhandler.fireConnectionUpdated("Access denied while connecting - SET serverhostname in <PARAM .. >\n" + e.getMessage());
+            this.connhandler.fireConnectionUpdated(new AccessErrorEvent(this, "Access denied while connecting - SET serverhostname in <PARAM .. >\n" + e.getMessage()));
         } catch (IOException e) {
-            this.connhandler.fireConnectionUpdated(e.getMessage());
+            this.connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
         } catch (Exception e) {
-            this.connhandler.fireConnectionUpdated("General error: " + e.getMessage());
+            this.connhandler.fireConnectionUpdated(new ConnectionEvent(this, e.getMessage()));
         }
     }
 
@@ -364,6 +364,6 @@ public class ChatClient extends Client implements Runnable, MessageEventHandler,
         closeIO();
         outBuffer.clear();
         finished = true;
-        this.connhandler.fireConnectionUpdated("ChatClient ended");
+        this.connhandler.fireConnectionUpdated(new ConnectionEvent(this, "Connection ended"));
     }
 }

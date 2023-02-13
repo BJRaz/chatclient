@@ -6,6 +6,7 @@ import netscape.javascript.*;
 import java.awt.*;
 import javax.swing.*;
 import tfud.client.ChatClient;
+import tfud.events.ConnectionEvent;
 import tfud.events.EventType;
 import tfud.events.ConnectionHandler;
 
@@ -211,7 +212,7 @@ public class ChatClientApplet extends JApplet implements tfud.events.MessageList
         window.call(what, args);
     }
 
-    public void connectionUpdated(tfud.events.ConnectionEvent cEvt) {
+    public void connectionUpdated(ConnectionEvent cEvt) {
         Object[] args = new Object[2];
         args[0] = cEvt.getSource();
         args[1] = cEvt.getCommand();

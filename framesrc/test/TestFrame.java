@@ -25,11 +25,11 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
      * */
     protected abstract class State
     {
-        abstract void Connect();
+        abstract void connect();
         
-        abstract void Disconnect();
+        abstract void disconnect();
         
-        abstract void SendMessage();
+        abstract void sendMessage();
     }
     
     protected class ConnectedState extends State
@@ -44,22 +44,27 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
 
         
         @Override
-        void Connect() {
-            Disconnect();
+        void connect() {
+            disconnect();
         }
 
         @Override
-        void Disconnect() {
+        void disconnect() {
             client.stopClient();
             state = new DisconnectedState();
             setStatus("Disconnected");
         }
 
         @Override
-        void SendMessage() {
+        void sendMessage() {
             try {
-                // TODO add your handling code here:
-                client.setMessage(EventType.MESSAGE, jTextField1.getText());
+                String txt = jTextField1.getText();
+                if(!txt.isEmpty()) {
+                    // TODO add your handling code here:
+                    client.setMessage(EventType.MESSAGE, txt);
+                    jTextField1.setText("");
+                }
+                
             } catch (Exception ex) {
                 Logger.getLogger(TestFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -74,10 +79,12 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             jID.setEnabled(true);
             jHandle.setEnabled(true);
             jChangeState.setText("Connect");
+            jTextField1.setText("");
+            jTextMessages.setText("");
         }
         
         @Override
-        void Connect() {
+        void connect() {
              // TODO add your handling code here:
             try {
                 client.startClient();
@@ -86,16 +93,15 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
             } catch (Exception e) {
                 setStatus("ERROR:  " + e.getMessage());
             }
-
         }
 
         @Override
-        void Disconnect() {
+        void disconnect() {
             // do nothing
         }
 
         @Override
-        void SendMessage() {
+        void sendMessage() {
             setStatus("System is in disconnected state");
         }
     }
@@ -138,6 +144,8 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
         jBtnSendMessage = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jStatus.setEnabled(false);
 
         jLabel1.setText("Status");
 
@@ -258,11 +266,11 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
     }// </editor-fold>//GEN-END:initComponents
 
     private void jBtnSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnSendMessageActionPerformed
-        state.SendMessage();
+        state.sendMessage();
     }//GEN-LAST:event_jBtnSendMessageActionPerformed
 
     private void jChangeStateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jChangeStateActionPerformed
-        state.Connect();
+        state.connect();
     }//GEN-LAST:event_jChangeStateActionPerformed
 
     /**
@@ -349,11 +357,16 @@ public class TestFrame extends javax.swing.JFrame implements MessageListener, Co
 
     @Override
     public void connectionUpdated(ConnectionEvent conObj) {
+        
+        String c = conObj.getClass().getName();
+        
         String command = conObj.getCommand();
-        switch(command) {
-            case "Connection refused":
-                state.Disconnect();
+        switch(c) {
+            case "ConnectionEvent":
+                state.disconnect();
                 break;
+            default:
+                state.disconnect();
         }
         insertMessage(command);
     }
